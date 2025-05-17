@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +22,21 @@ const languages = [
   "Rust"
 ];
 
+// Added international languages
+const internationalLanguages = [
+  "English",
+  "Hindi",
+  "Arabic",
+  "Spanish",
+  "French",
+  "Mandarin",
+  "Russian",
+  "Portuguese",
+  "German",
+  "Japanese",
+  "Korean"
+];
+
 const skillOptions = [
   "HTML", "CSS", "JavaScript", "TypeScript", "React", 
   "Angular", "Vue.js", "Node.js", "Express", "Django", 
@@ -35,11 +50,14 @@ const ProfileSetup = () => {
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     language: '',
-    resumeLink: '',
+    resumeFile: null as File | null,
+    spokenLanguage: '',
+    customSkill: ''
   });
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -50,10 +68,36 @@ const ProfileSetup = () => {
     }
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      if (file.type !== 'application/pdf') {
+        setErrors((prev) => ({ ...prev, resumeFile: 'Only PDF files are allowed' }));
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        setErrors((prev) => ({ ...prev, resumeFile: 'File size should be less than 5MB' }));
+        return;
+      }
+      
+      setFormData((prev) => ({ ...prev, resumeFile: file }));
+      if (errors.resumeFile) {
+        setErrors((prev) => ({ ...prev, resumeFile: '' }));
+      }
+    }
+  };
+
   const handleLanguageChange = (value: string) => {
     setFormData((prev) => ({ ...prev, language: value }));
     if (errors.language) {
       setErrors((prev) => ({ ...prev, language: '' }));
+    }
+  };
+
+  const handleSpokenLanguageChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, spokenLanguage: value }));
+    if (errors.spokenLanguage) {
+      setErrors((prev) => ({ ...prev, spokenLanguage: '' }));
     }
   };
 
@@ -70,6 +114,22 @@ const ProfileSetup = () => {
     }
   };
 
+  const addCustomSkill = () => {
+    if (!formData.customSkill.trim()) return;
+    
+    // Check if skill already exists
+    if (selectedSkills.includes(formData.customSkill.trim())) {
+      toast({
+        title: "Skill already added",
+        description: "This skill is already in your list.",
+      });
+      return;
+    }
+    
+    setSelectedSkills(prev => [...prev, formData.customSkill.trim()]);
+    setFormData(prev => ({ ...prev, customSkill: '' }));
+  };
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     
@@ -77,10 +137,8 @@ const ProfileSetup = () => {
       newErrors.language = 'Please select a preferred programming language';
     }
     
-    if (!formData.resumeLink) {
-      newErrors.resumeLink = 'Resume link is required';
-    } else if (!/^https?:\/\/.+/.test(formData.resumeLink)) {
-      newErrors.resumeLink = 'Please enter a valid URL';
+    if (!formData.spokenLanguage) {
+      newErrors.spokenLanguage = 'Please select a preferred spoken language';
     }
     
     if (selectedSkills.length === 0) {
@@ -98,8 +156,18 @@ const ProfileSetup = () => {
     
     setIsLoading(true);
     
-    // Simulate API call
+    // Simulate API call - store data in localStorage for demo purposes
     setTimeout(() => {
+      // Store data in local storage for retrieval in profile page
+      localStorage.setItem('userProfile', JSON.stringify({
+        language: formData.language,
+        spokenLanguage: formData.spokenLanguage,
+        skills: selectedSkills,
+        resumeFileName: formData.resumeFile ? formData.resumeFile.name : null,
+        // In a real app, you would upload the file to a server and store the URL
+        // For demo purposes, we're just storing the file name
+      }));
+      
       setIsLoading(false);
       toast({
         title: "Profile setup complete!",
@@ -110,7 +178,7 @@ const ProfileSetup = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center py-20 px-4 sm:px-6 lg:px-8 bg-gray-50 mt-16">
       <div className="w-full max-w-2xl">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold gradient-text">Complete Your Profile</h1>
@@ -145,23 +213,65 @@ const ProfileSetup = () => {
                   <p className="text-sm text-red-500">{errors.language}</p>
                 )}
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="spokenLanguage">Preferred Spoken Language</Label>
+                <Select 
+                  onValueChange={handleSpokenLanguageChange} 
+                  value={formData.spokenLanguage}
+                >
+                  <SelectTrigger id="spokenLanguage" className={errors.spokenLanguage ? "border-red-500" : ""}>
+                    <SelectValue placeholder="Select your preferred language" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {internationalLanguages.map((language) => (
+                      <SelectItem key={language} value={language}>
+                        {language}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.spokenLanguage && (
+                  <p className="text-sm text-red-500">{errors.spokenLanguage}</p>
+                )}
+              </div>
               
               <div className="space-y-2">
-                <Label htmlFor="resumeLink">Resume Google Drive Link (optional)</Label>
-                <Input
-                  id="resumeLink"
-                  name="resumeLink"
-                  type="url"
-                  placeholder="https://drive.google.com/file/..."
-                  value={formData.resumeLink}
-                  onChange={handleChange}
-                  className={errors.resumeLink ? "border-red-500" : ""}
-                />
+                <Label htmlFor="resumeFile">Resume (PDF)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="resumeFile"
+                    name="resumeFile"
+                    type="file"
+                    accept=".pdf"
+                    onChange={handleFileChange}
+                    className={errors.resumeFile ? "border-red-500" : ""}
+                    ref={fileInputRef}
+                    style={{ display: 'none' }}
+                  />
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {formData.resumeFile ? formData.resumeFile.name : "Choose PDF file"}
+                  </Button>
+                  {formData.resumeFile && (
+                    <Button 
+                      type="button" 
+                      variant="ghost"
+                      onClick={() => setFormData(prev => ({ ...prev, resumeFile: null }))}
+                    >
+                      Clear
+                    </Button>
+                  )}
+                </div>
                 <p className="text-xs text-gray-500">
-                  Share a link to your resume for more personalized path suggestions
+                  Upload your resume in PDF format (max 5MB)
                 </p>
-                {errors.resumeLink && (
-                  <p className="text-sm text-red-500">{errors.resumeLink}</p>
+                {errors.resumeFile && (
+                  <p className="text-sm text-red-500">{errors.resumeFile}</p>
                 )}
               </div>
               
@@ -181,11 +291,50 @@ const ProfileSetup = () => {
                     </Button>
                   ))}
                 </div>
+
+                <div className="flex gap-2 mt-4">
+                  <Input
+                    placeholder="Add other skill..."
+                    value={formData.customSkill}
+                    onChange={(e) => setFormData(prev => ({ ...prev, customSkill: e.target.value }))}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addCustomSkill();
+                      }
+                    }}
+                  />
+                  <Button type="button" onClick={addCustomSkill}>Add</Button>
+                </div>
+
+                {selectedSkills.length > 0 && (
+                  <div className="mt-4">
+                    <Label className="mb-2 block">Selected Skills:</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedSkills.map((skill) => (
+                        <div 
+                          key={skill} 
+                          className="bg-pathfinder-primary text-white px-3 py-1 rounded-full text-sm flex items-center gap-1"
+                        >
+                          {skill}
+                          <button 
+                            type="button" 
+                            onClick={() => toggleSkill(skill)} 
+                            className="ml-1 rounded-full bg-white bg-opacity-20 h-4 w-4 flex items-center justify-center text-xs hover:bg-opacity-30"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
                 {errors.skills && (
                   <p className="text-sm text-red-500">{errors.skills}</p>
                 )}
                 <p className="text-xs text-gray-500">
-                  Select all the skills you currently have
+                  Select all the skills you currently have or add custom ones
                 </p>
               </div>
             </CardContent>

@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,18 +8,49 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { CheckCircle, User, Mail, MapPin, GraduationCap } from 'lucide-react';
+import { CheckCircle, User, Mail, MapPin, GraduationCap, FileText } from 'lucide-react';
 
-// Mock user data
-const userProfile = {
+// Programming languages
+const languages = [
+  "JavaScript",
+  "Python",
+  "Java",
+  "C#",
+  "Go",
+  "Ruby",
+  "PHP",
+  "TypeScript",
+  "Swift",
+  "Kotlin",
+  "Rust"
+];
+
+// International languages
+const internationalLanguages = [
+  "English",
+  "Hindi",
+  "Arabic",
+  "Spanish",
+  "French",
+  "Mandarin",
+  "Russian",
+  "Portuguese",
+  "German",
+  "Japanese",
+  "Korean"
+];
+
+// Mock user data initial state
+const initialUserProfile = {
   name: 'Alex Johnson',
   email: 'alex.johnson@example.com',
   location: 'San Francisco, CA',
   bio: 'Frontend developer passionate about creating beautiful and accessible user interfaces. Currently learning React and TypeScript.',
   profileImage: 'https://i.pravatar.cc/150?img=12',
   preferredLanguage: 'JavaScript',
+  spokenLanguage: 'English',
   skills: ['HTML', 'CSS', 'JavaScript', 'React', 'TypeScript'],
-  resumeLink: 'https://drive.google.com/file/d/example',
+  resumeFileName: null,
   progress: {
     coursesCompleted: 4,
     totalCourses: 7,
@@ -31,16 +62,20 @@ const userProfile = {
 
 const ProfileEditor = () => {
   const { toast } = useToast();
+  const [userProfile, setUserProfile] = useState(initialUserProfile);
   const [formData, setFormData] = useState({
-    name: userProfile.name,
-    email: userProfile.email,
-    location: userProfile.location,
-    bio: userProfile.bio,
-    preferredLanguage: userProfile.preferredLanguage,
-    resumeLink: userProfile.resumeLink
+    name: '',
+    email: '',
+    location: '',
+    bio: '',
+    preferredLanguage: '',
+    spokenLanguage: '',
+    customSkill: '',
+    resumeFile: null as File | null
   });
-  const [selectedSkills, setSelectedSkills] = useState<string[]>(userProfile.skills);
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const skillOptions = [
     "HTML", "CSS", "JavaScript", "TypeScript", "React", 
@@ -50,27 +85,64 @@ const ProfileEditor = () => {
     "Docker", "Kubernetes", "Git", "GitHub", "CI/CD"
   ];
   
-  const languages = [
-    "JavaScript",
-    "Python",
-    "Java",
-    "C#",
-    "Go",
-    "Ruby",
-    "PHP",
-    "TypeScript",
-    "Swift",
-    "Kotlin",
-    "Rust"
-  ];
+  useEffect(() => {
+    // Load profile data from localStorage if exists
+    const savedProfile = localStorage.getItem('userProfile');
+    if (savedProfile) {
+      const parsedProfile = JSON.parse(savedProfile);
+      setUserProfile(prev => ({
+        ...prev,
+        ...parsedProfile
+      }));
+    }
+    
+    // Initialize form data with user profile
+    setFormData({
+      name: userProfile.name,
+      email: userProfile.email,
+      location: userProfile.location,
+      bio: userProfile.bio,
+      preferredLanguage: userProfile.preferredLanguage,
+      spokenLanguage: userProfile.spokenLanguage || 'English',
+      customSkill: '',
+      resumeFile: null
+    });
+    setSelectedSkills(userProfile.skills);
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      if (file.type !== 'application/pdf') {
+        toast({
+          title: "Invalid file type",
+          description: "Only PDF files are allowed",
+        });
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast({
+          title: "File too large",
+          description: "File size should be less than 5MB",
+        });
+        return;
+      }
+      
+      setFormData((prev) => ({ ...prev, resumeFile: file }));
+    }
+  };
+
   const handleLanguageChange = (value: string) => {
     setFormData((prev) => ({ ...prev, preferredLanguage: value }));
+  };
+
+  const handleSpokenLanguageChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, spokenLanguage: value }));
   };
 
   const toggleSkill = (skill: string) => {
@@ -83,13 +155,45 @@ const ProfileEditor = () => {
     });
   };
 
+  const addCustomSkill = () => {
+    if (!formData.customSkill.trim()) return;
+    
+    // Check if skill already exists
+    if (selectedSkills.includes(formData.customSkill.trim())) {
+      toast({
+        title: "Skill already added",
+        description: "This skill is already in your list.",
+      });
+      return;
+    }
+    
+    setSelectedSkills(prev => [...prev, formData.customSkill.trim()]);
+    setFormData(prev => ({ ...prev, customSkill: '' }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate API call
+    // Update user profile with form data
+    const updatedProfile = {
+      ...userProfile,
+      name: formData.name,
+      email: formData.email,
+      location: formData.location,
+      bio: formData.bio,
+      preferredLanguage: formData.preferredLanguage,
+      spokenLanguage: formData.spokenLanguage,
+      skills: selectedSkills,
+      resumeFileName: formData.resumeFile ? formData.resumeFile.name : userProfile.resumeFileName,
+    };
+    
+    // Simulate API call and update local storage
     setTimeout(() => {
       setIsLoading(false);
+      setUserProfile(updatedProfile);
+      localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+      
       toast({
         title: "Profile updated!",
         description: "Your profile information has been saved.",
@@ -158,6 +262,20 @@ const ProfileEditor = () => {
               ))}
             </div>
           </div>
+
+          {/* Resume viewer section */}
+          {userProfile.resumeFileName && (
+            <div className="w-full mt-6 p-4 border rounded-md">
+              <div className="flex items-center gap-2 mb-3">
+                <FileText className="h-5 w-5 text-pathfinder-primary" />
+                <p className="font-medium">Resume</p>
+              </div>
+              <p className="text-sm text-gray-600 mb-2">{userProfile.resumeFileName}</p>
+              <Button variant="outline" size="sm" className="w-full">
+                Download Resume
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
       
@@ -246,17 +364,62 @@ const ProfileEditor = () => {
                 </SelectContent>
               </Select>
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="spokenLanguage">Preferred Spoken Language</Label>
+              <Select 
+                onValueChange={handleSpokenLanguageChange}
+                value={formData.spokenLanguage}
+              >
+                <SelectTrigger id="spokenLanguage">
+                  <SelectValue placeholder="Select your spoken language" />
+                </SelectTrigger>
+                <SelectContent>
+                  {internationalLanguages.map((language) => (
+                    <SelectItem key={language} value={language}>
+                      {language}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             
             <div className="space-y-2">
-              <Label htmlFor="resumeLink">Resume Google Drive Link</Label>
-              <Input
-                id="resumeLink"
-                name="resumeLink"
-                type="url"
-                placeholder="https://drive.google.com/file/..."
-                value={formData.resumeLink}
-                onChange={handleChange}
-              />
+              <Label htmlFor="resumeFile">Resume (PDF)</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="resumeFile"
+                  name="resumeFile"
+                  type="file"
+                  accept=".pdf"
+                  onChange={handleFileChange}
+                  ref={fileInputRef}
+                  style={{ display: 'none' }}
+                />
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {formData.resumeFile ? formData.resumeFile.name : (userProfile.resumeFileName || "Choose PDF file")}
+                </Button>
+                {(formData.resumeFile || userProfile.resumeFileName) && (
+                  <Button 
+                    type="button" 
+                    variant="ghost"
+                    onClick={() => {
+                      setFormData(prev => ({ ...prev, resumeFile: null }));
+                      setUserProfile(prev => ({ ...prev, resumeFileName: null }));
+                    }}
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
+              <p className="text-xs text-gray-500">
+                Upload your resume in PDF format (max 5MB)
+              </p>
             </div>
             
             <div className="space-y-2">
@@ -275,8 +438,47 @@ const ProfileEditor = () => {
                   </Button>
                 ))}
               </div>
+
+              <div className="flex gap-2 mt-4">
+                <Input
+                  placeholder="Add other skill..."
+                  value={formData.customSkill}
+                  onChange={(e) => setFormData(prev => ({ ...prev, customSkill: e.target.value }))}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addCustomSkill();
+                    }
+                  }}
+                />
+                <Button type="button" onClick={addCustomSkill}>Add</Button>
+              </div>
+
+              {selectedSkills.length > 0 && (
+                <div className="mt-4">
+                  <Label className="mb-2 block">Selected Skills:</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedSkills.map((skill) => (
+                      <div 
+                        key={skill} 
+                        className="bg-pathfinder-primary text-white px-3 py-1 rounded-full text-sm flex items-center gap-1"
+                      >
+                        {skill}
+                        <button 
+                          type="button" 
+                          onClick={() => toggleSkill(skill)} 
+                          className="ml-1 rounded-full bg-white bg-opacity-20 h-4 w-4 flex items-center justify-center text-xs hover:bg-opacity-30"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
               <p className="text-xs text-gray-500">
-                Select all the skills you currently have
+                Select all the skills you currently have or add custom ones
               </p>
             </div>
           </CardContent>

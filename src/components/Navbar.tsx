@@ -1,35 +1,37 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from './ui/button';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, User } from 'lucide-react';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  
+  useEffect(() => {
+    // Check if user is logged in - in a real app this would check for auth token
+    // For demo purposes, we'll consider the user logged in if they have completed profile setup
+    const userProfile = localStorage.getItem('userProfile');
+    setIsLoggedIn(!!userProfile || location.pathname === '/dashboard');
+  }, [location.pathname]);
   
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   
   const isActive = (path: string) => location.pathname === path;
-
-  // Mock function to check if user is logged in
-  const isLoggedIn = () => {
-    // In a real app, this would check for auth token or user context
-    return location.pathname === '/dashboard';
-  };
   
   const handleRoadmapClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (isLoggedIn()) {
+    if (isLoggedIn) {
       navigate('/roadmap');
     } else {
-      navigate('/login');
+      navigate('/login', { state: { from: '/roadmap' } });
     }
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-lg border-b border-slate-200 shadow-sm">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-lg border-b border-slate-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
@@ -59,10 +61,39 @@ const Navbar = () => {
               </a>
               
               <div className="ml-4 flex items-center space-x-2">
-                {isLoggedIn() ? (
-                  <Link to="/dashboard">
-                    <Button variant="outline" size="sm">Dashboard</Button>
-                  </Link>
+                {isLoggedIn ? (
+                  <div className="flex items-center space-x-2">
+                    <Link to="/dashboard" className={`px-3 py-2 rounded-md text-sm font-medium ${isActive('/dashboard') ? 'text-pathfinder-primary' : 'text-gray-600 hover:text-pathfinder-primary'}`}>
+                      Dashboard
+                    </Link>
+                    <div className="relative group">
+                      <Button variant="outline" size="sm" className="flex items-center gap-1">
+                        <User size={16} />
+                        <span>Profile</span>
+                      </Button>
+                      <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50 hidden group-hover:block">
+                        <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
+                          <Link to="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            View Profile
+                          </Link>
+                          <Link to="/dashboard" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            Dashboard
+                          </Link>
+                          <button 
+                            onClick={() => {
+                              // In a real app, this would log out the user
+                              localStorage.removeItem('userProfile');
+                              setIsLoggedIn(false);
+                              navigate('/');
+                            }} 
+                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          >
+                            Sign Out
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 ) : (
                   <>
                     <Link to="/login">
@@ -125,10 +156,27 @@ const Navbar = () => {
               Personalized Roadmap
             </a>
             <div className="mt-4 flex flex-col space-y-2 px-3">
-              {isLoggedIn() ? (
-                <Link to="/dashboard" onClick={toggleMenu}>
-                  <Button variant="outline" className="w-full">Dashboard</Button>
-                </Link>
+              {isLoggedIn ? (
+                <>
+                  <Link to="/dashboard" onClick={toggleMenu} className="w-full">
+                    <Button variant="outline" className="w-full">Dashboard</Button>
+                  </Link>
+                  <Link to="/profile" onClick={toggleMenu} className="w-full">
+                    <Button variant="default" className="w-full">Profile</Button>
+                  </Link>
+                  <Button 
+                    variant="ghost" 
+                    className="w-full" 
+                    onClick={() => {
+                      localStorage.removeItem('userProfile');
+                      setIsLoggedIn(false);
+                      toggleMenu();
+                      navigate('/');
+                    }}
+                  >
+                    Sign Out
+                  </Button>
+                </>
               ) : (
                 <>
                   <Link to="/login" onClick={toggleMenu}>
