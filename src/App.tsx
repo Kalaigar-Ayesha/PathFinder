@@ -16,6 +16,7 @@ import Dashboard from "./pages/Dashboard";
 import UseCase from "./pages/UseCase";
 import Subscription from "./pages/Subscription";
 import NotFound from "./pages/NotFound";
+import RoadmapGenerator from "./pages/RoadmapGenerator";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/use-case" element={<UseCase />} />
             <Route path="/subscription" element={<Subscription />} />
+            <Route path="/roadmap" element={<RoadmapGenerator />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>

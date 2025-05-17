@@ -3,7 +3,8 @@ import { useState } from 'react';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle, ArrowRight, Calendar, Book } from 'lucide-react';
+import { CheckCircle, ArrowRight, Calendar, Book } from 'lucide-react';
+import ProfileEditor from '@/components/ProfileEditor';
 
 // Dummy data for the learning roadmap
 const roadmapItems = [
@@ -85,6 +86,7 @@ const userStats = {
 
 const Dashboard = () => {
   const [expandedItemId, setExpandedItemId] = useState<number | null>(null);
+  const [showProfileEditor, setShowProfileEditor] = useState(false);
 
   const toggleItemExpand = (id: number) => {
     setExpandedItemId(expandedItemId === id ? null : id);
@@ -100,182 +102,193 @@ const Dashboard = () => {
           </div>
           
           <div className="flex space-x-4 mt-4 md:mt-0">
-            <Button variant="outline">Edit Profile</Button>
+            <Button 
+              variant="outline"
+              onClick={() => setShowProfileEditor(!showProfileEditor)}
+            >
+              {showProfileEditor ? "View Roadmap" : "Edit Profile"}
+            </Button>
             <Button>Continue Learning</Button>
           </div>
         </div>
         
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <Card>
-            <CardContent className="py-6 flex items-center">
-              <div className="bg-blue-100 p-3 rounded-full mr-4">
-                <Calendar className="h-6 w-6 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-500">Days Active</p>
-                <p className="text-2xl font-bold">{userStats.daysActive}</p>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="py-6 flex items-center">
-              <div className="bg-green-100 p-3 rounded-full mr-4">
-                <CheckCircle className="h-6 w-6 text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-500">Courses Completed</p>
-                <p className="text-2xl font-bold">{userStats.coursesCompleted}</p>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="py-6 flex items-center">
-              <div className="bg-purple-100 p-3 rounded-full mr-4">
-                <Book className="h-6 w-6 text-pathfinder-primary" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-500">Day Streak</p>
-                <p className="text-2xl font-bold">{userStats.currentStreak}</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        
-        {/* Learning Roadmap */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Your React Developer Roadmap</CardTitle>
-            <CardDescription>Based on your skills and goals, we've created this personalized learning path</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              {roadmapItems.map((item) => (
-                <div 
-                  key={item.id} 
-                  className={`border rounded-lg overflow-hidden transition-all ${expandedItemId === item.id ? 'shadow-md' : ''}`}
-                >
-                  <div 
-                    className={`p-4 flex justify-between items-center cursor-pointer ${
-                      item.completed ? 'bg-green-50' : 'bg-white'
-                    }`}
-                    onClick={() => toggleItemExpand(item.id)}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div>
-                        {item.completed ? (
-                          <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-                            <CheckCircle className="h-6 w-6 text-green-600" />
-                          </div>
-                        ) : (
-                          <div className="h-10 w-10 rounded-full border-2 border-gray-300 flex items-center justify-center text-gray-500">
-                            {item.id}
-                          </div>
-                        )}
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-lg">{item.title}</h3>
-                        <div className="text-sm text-gray-500 flex items-center space-x-2">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            {item.type}
-                          </span>
-                          <span>•</span>
-                          <span>{item.duration}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center">
-                      <div className="w-40 mr-4 hidden sm:block">
-                        <div className="flex justify-between text-xs mb-1">
-                          <span>Progress</span>
-                          <span>{item.progress}%</span>
-                        </div>
-                        <Progress value={item.progress} className="h-2" />
-                      </div>
-                      <ArrowRight className={`h-5 w-5 transition-transform ${expandedItemId === item.id ? 'rotate-90' : ''}`} />
-                    </div>
-                  </div>
-                  
-                  {expandedItemId === item.id && (
-                    <div className="p-4 bg-gray-50 border-t">
-                      <p className="text-gray-700 mb-4">{item.description}</p>
-                      
-                      {!item.completed && item.currentModule && (
-                        <div className="mb-4">
-                          <p className="text-sm font-medium">Current Module:</p>
-                          <p className="text-pathfinder-primary">{item.currentModule}</p>
-                        </div>
-                      )}
-                      
-                      <div className="mb-4">
-                        <p className="text-sm font-medium mb-2">Recommended Resources:</p>
-                        <ul className="list-disc pl-5 space-y-1">
-                          {item.resources.map((resource, index) => (
-                            <li key={index}>
-                              <a href={resource.url} className="text-pathfinder-accent hover:underline">
-                                {resource.name}
-                              </a>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                      
-                      <div className="flex justify-end">
-                        <Button>
-                          {item.completed ? "Review Material" : item.progress > 0 ? "Continue" : "Start Learning"}
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-        
-        {/* Recommendations */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recommended for You</CardTitle>
-            <CardDescription>Based on your progress and interests</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {showProfileEditor ? (
+          <ProfileEditor />
+        ) : (
+          <>
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
               <Card>
-                <CardContent className="p-4">
-                  <div className="bg-blue-50 p-4 rounded-lg mb-3">
-                    <Book className="h-6 w-6 text-blue-600" />
+                <CardContent className="py-6 flex items-center">
+                  <div className="bg-blue-100 p-3 rounded-full mr-4">
+                    <Calendar className="h-6 w-6 text-blue-600" />
                   </div>
-                  <h3 className="font-medium mb-2">Advanced React Hooks Workshop</h3>
-                  <p className="text-sm text-gray-600 mb-3">Master the use of React's built-in hooks and create your own custom hooks.</p>
-                  <Button variant="outline" className="w-full">View Workshop</Button>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Days Active</p>
+                    <p className="text-2xl font-bold">{userStats.daysActive}</p>
+                  </div>
                 </CardContent>
               </Card>
+              
               <Card>
-                <CardContent className="p-4">
-                  <div className="bg-purple-50 p-4 rounded-lg mb-3">
+                <CardContent className="py-6 flex items-center">
+                  <div className="bg-green-100 p-3 rounded-full mr-4">
+                    <CheckCircle className="h-6 w-6 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Courses Completed</p>
+                    <p className="text-2xl font-bold">{userStats.coursesCompleted}</p>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="py-6 flex items-center">
+                  <div className="bg-purple-100 p-3 rounded-full mr-4">
                     <Book className="h-6 w-6 text-pathfinder-primary" />
                   </div>
-                  <h3 className="font-medium mb-2">TypeScript for React Developers</h3>
-                  <p className="text-sm text-gray-600 mb-3">Learn how to add strong typing to your React applications with TypeScript.</p>
-                  <Button variant="outline" className="w-full">View Course</Button>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="bg-green-50 p-4 rounded-lg mb-3">
-                    <Book className="h-6 w-6 text-green-600" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Day Streak</p>
+                    <p className="text-2xl font-bold">{userStats.currentStreak}</p>
                   </div>
-                  <h3 className="font-medium mb-2">React Testing Library</h3>
-                  <p className="text-sm text-gray-600 mb-3">Write maintainable tests for your React components using React Testing Library.</p>
-                  <Button variant="outline" className="w-full">View Tutorial</Button>
                 </CardContent>
               </Card>
             </div>
-          </CardContent>
-        </Card>
+            
+            {/* Learning Roadmap */}
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle>Your React Developer Roadmap</CardTitle>
+                <CardDescription>Based on your skills and goals, we've created this personalized learning path</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {roadmapItems.map((item) => (
+                    <div 
+                      key={item.id} 
+                      className={`border rounded-lg overflow-hidden transition-all ${expandedItemId === item.id ? 'shadow-md' : ''}`}
+                    >
+                      <div 
+                        className={`p-4 flex justify-between items-center cursor-pointer ${
+                          item.completed ? 'bg-green-50' : 'bg-white'
+                        }`}
+                        onClick={() => toggleItemExpand(item.id)}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div>
+                            {item.completed ? (
+                              <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+                                <CheckCircle className="h-6 w-6 text-green-600" />
+                              </div>
+                            ) : (
+                              <div className="h-10 w-10 rounded-full border-2 border-gray-300 flex items-center justify-center text-gray-500">
+                                {item.id}
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <h3 className="font-medium text-lg">{item.title}</h3>
+                            <div className="text-sm text-gray-500 flex items-center space-x-2">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {item.type}
+                              </span>
+                              <span>•</span>
+                              <span>{item.duration}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center">
+                          <div className="w-40 mr-4 hidden sm:block">
+                            <div className="flex justify-between text-xs mb-1">
+                              <span>Progress</span>
+                              <span>{item.progress}%</span>
+                            </div>
+                            <Progress value={item.progress} className="h-2" />
+                          </div>
+                          <ArrowRight className={`h-5 w-5 transition-transform ${expandedItemId === item.id ? 'rotate-90' : ''}`} />
+                        </div>
+                      </div>
+                      
+                      {expandedItemId === item.id && (
+                        <div className="p-4 bg-gray-50 border-t">
+                          <p className="text-gray-700 mb-4">{item.description}</p>
+                          
+                          {!item.completed && item.currentModule && (
+                            <div className="mb-4">
+                              <p className="text-sm font-medium">Current Module:</p>
+                              <p className="text-pathfinder-primary">{item.currentModule}</p>
+                            </div>
+                          )}
+                          
+                          <div className="mb-4">
+                            <p className="text-sm font-medium mb-2">Recommended Resources:</p>
+                            <ul className="list-disc pl-5 space-y-1">
+                              {item.resources.map((resource, index) => (
+                                <li key={index}>
+                                  <a href={resource.url} className="text-pathfinder-accent hover:underline">
+                                    {resource.name}
+                                  </a>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                          
+                          <div className="flex justify-end">
+                            <Button>
+                              {item.completed ? "Review Material" : item.progress > 0 ? "Continue" : "Start Learning"}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Recommendations */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Recommended for You</CardTitle>
+                <CardDescription>Based on your progress and interests</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="bg-blue-50 p-4 rounded-lg mb-3">
+                        <Book className="h-6 w-6 text-blue-600" />
+                      </div>
+                      <h3 className="font-medium mb-2">Advanced React Hooks Workshop</h3>
+                      <p className="text-sm text-gray-600 mb-3">Master the use of React's built-in hooks and create your own custom hooks.</p>
+                      <Button variant="outline" className="w-full">View Workshop</Button>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="bg-purple-50 p-4 rounded-lg mb-3">
+                        <Book className="h-6 w-6 text-pathfinder-primary" />
+                      </div>
+                      <h3 className="font-medium mb-2">TypeScript for React Developers</h3>
+                      <p className="text-sm text-gray-600 mb-3">Learn how to add strong typing to your React applications with TypeScript.</p>
+                      <Button variant="outline" className="w-full">View Course</Button>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="bg-green-50 p-4 rounded-lg mb-3">
+                        <Book className="h-6 w-6 text-green-600" />
+                      </div>
+                      <h3 className="font-medium mb-2">React Testing Library</h3>
+                      <p className="text-sm text-gray-600 mb-3">Write maintainable tests for your React components using React Testing Library.</p>
+                      <Button variant="outline" className="w-full">View Tutorial</Button>
+                    </CardContent>
+                  </Card>
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
       </div>
     </div>
   );
