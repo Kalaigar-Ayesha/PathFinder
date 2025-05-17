@@ -23,11 +23,11 @@ const Landing = () => {
                     Get Started for Free
                   </Button>
                 </Link>
-                <Link to="/login">
-                  <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10">
+                {/* <Link to="/login">
+                  <Button size="lg" variant="outline" className="border-white text-pathfinder-primary hover:bg-white/10">
                     Login
                   </Button>
-                </Link>
+                </Link> */}
               </div>
             </div>
             <div className="hidden md:block">
@@ -173,11 +173,17 @@ const Landing = () => {
                 Get Started for Free
               </Button>
             </Link>
-            <Link to="/use-case">
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10">
-                See How It Works
-              </Button>
-            </Link>
+         <Link to="/use-case">
+  <Button
+    size="lg"
+    variant="outline"
+    className="bg-white text-pathfinder-primary hover:bg-white hover:text-purple-700 transition-colors duration-300"
+  >
+    See How It Works
+  </Button>
+</Link>
+
+
           </div>
         </div>
       </section>
