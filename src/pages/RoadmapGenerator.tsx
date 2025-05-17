@@ -334,7 +334,8 @@ To refine this roadmap further, please share your specific interests or career g
           </CardContent>
         </Card>
       </div>
-      <style jsx>{`
+      <style dangerouslySetInnerHTML={{
+        __html: `
         .dot-typing {
           position: relative;
           left: -9999px;
@@ -370,7 +371,8 @@ To refine this roadmap further, please share your specific interests or career g
             box-shadow: 9984px 0 0 0 #9b87f5, 9999px 0 0 0 #9b87f5, 10014px 0 0 0 #9b87f5;
           }
         }
-      `}</style>
+        `
+      }} />
     </div>
   );
 };
