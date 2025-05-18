@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from './ui/button';
@@ -11,6 +10,7 @@ interface NavbarProps {
 
 const Navbar: React.FC<NavbarProps> = ({ isAuthenticated, setIsAuthenticated }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
   const location = useLocation();
   const navigate = useNavigate();
@@ -26,9 +26,33 @@ const Navbar: React.FC<NavbarProps> = ({ isAuthenticated, setIsAuthenticated }) 
   // Close mobile menu when route changes
   useEffect(() => {
     setIsMenuOpen(false);
+    setIsDropdownOpen(false);
   }, [location.pathname]);
   
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const dropdown = document.getElementById('profile-dropdown');
+      const profileButton = document.getElementById('profile-button');
+      
+      if (
+        dropdown && 
+        profileButton && 
+        !dropdown.contains(event.target as Node) && 
+        !profileButton.contains(event.target as Node)
+      ) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+  
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+  const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);
   
   const isActive = (path: string) => location.pathname === path;
   
@@ -86,33 +110,42 @@ const Navbar: React.FC<NavbarProps> = ({ isAuthenticated, setIsAuthenticated }) 
               <div className="ml-4 flex items-center space-x-2">
                 {isAuthenticated ? (
                   <div className="flex items-center space-x-2">
-                    <Link to="/dashboard" className={`px-3 py-2 rounded-md text-sm font-medium ${isActive('/dashboard') ? 'text-pathfinder-primary' : 'text-gray-600 hover:text-pathfinder-primary'}`}>
-                      Dashboard
-                    </Link>
-                    <div className="relative group">
-                      <Button variant="outline" size="sm" className="flex items-center gap-1">
+                    
+                    <div className="relative">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex items-center gap-1"
+                        onClick={toggleDropdown}
+                        id="profile-button"
+                      >
                         <User size={16} />
-                        <span>{userProfile?.name || 'Profile'}</span>
+                        <span>Profile</span>
                       </Button>
-                      <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50 hidden group-hover:block">
-                        <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
-                          <Link to="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                            View Profile
-                          </Link>
-                          <Link to="/dashboard" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                            Dashboard
-                          </Link>
-                          <button 
-                            onClick={handleLogout} 
-                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          >
-                            <div className="flex items-center">
-                              <LogOut size={14} className="mr-2" />
-                              <span>Sign Out</span>
-                            </div>
-                          </button>
+                      {isDropdownOpen && (
+                        <div 
+                          id="profile-dropdown" 
+                          className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
+                        >
+                          <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
+                            <Link to="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                              View Profile
+                            </Link>
+                            <Link to="/dashboard" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                              Dashboard
+                            </Link>
+                            <button 
+                              onClick={handleLogout} 
+                              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            >
+                              <div className="flex items-center">
+                                <LogOut size={14} className="mr-2" />
+                                <span>Sign Out</span>
+                              </div>
+                            </button>
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   </div>
                 ) : (

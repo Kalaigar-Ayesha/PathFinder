@@ -106,9 +106,9 @@ const Dashboard = () => {
               variant="outline"
               onClick={() => setShowProfileEditor(!showProfileEditor)}
             >
-              {showProfileEditor ? "View Roadmap" : "Edit Profile"}
+              {showProfileEditor ? "View Dashboard" : "Edit Profile"}
             </Button>
-            <Button>Continue Learning</Button>
+            
           </div>
         </div>
         
