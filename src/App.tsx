@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useState, useEffect } from 'react';
 
 import Navbar from "./components/Navbar";
 import Chatbot from "./components/Chatbot";
@@ -22,14 +23,31 @@ import ProfilePage from "./pages/ProfilePage";
 const queryClient = new QueryClient();
 
 const App = () => {
-  // Simple auth check for demo purposes
-  const isLoggedIn = () => {
-    return localStorage.getItem('userProfile') !== null;
-  };
+  // Track authentication state globally
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  
+  // Check for authentication on load and storage changes
+  useEffect(() => {
+    // Check if user is logged in
+    const checkAuth = () => {
+      const userProfile = localStorage.getItem('userProfile');
+      setIsAuthenticated(!!userProfile);
+    };
+
+    // Check on component mount
+    checkAuth();
+
+    // Add listener for localStorage changes
+    window.addEventListener('storage', checkAuth);
+    
+    return () => {
+      window.removeEventListener('storage', checkAuth);
+    };
+  }, []);
 
   // Auth protected route component
   const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-    if (!isLoggedIn()) {
+    if (!isAuthenticated) {
       return <Navigate to="/login" replace />;
     }
     return <>{children}</>;
@@ -41,7 +59,7 @@ const App = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Navbar />
+          <Navbar isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} />
           <main className="pt-16"> {/* Added padding top to account for navbar */}
             <Routes>
               <Route path="/" element={<Landing />} />
@@ -76,9 +94,7 @@ const App = () => {
               <Route 
                 path="/roadmap" 
                 element={
-                  <ProtectedRoute>
-                    <RoadmapGenerator />
-                  </ProtectedRoute>
+                  isAuthenticated ? <RoadmapGenerator /> : <Navigate to="/login" state={{ from: '/roadmap' }} />
                 } 
               />
               <Route path="*" element={<NotFound />} />

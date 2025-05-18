@@ -18,6 +18,13 @@ const Login = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
 
+  // Check if already logged in, redirect to dashboard if so
+  useState(() => {
+    if (localStorage.getItem('userProfile')) {
+      navigate('/dashboard');
+    }
+  });
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -54,11 +61,25 @@ const Login = () => {
     // Simulate login API call
     setTimeout(() => {
       setIsLoading(false);
-      // For demo purposes, log the user in
+      
+      // For demo purposes, create a user profile and store it
+      const userProfile = {
+        id: "user123",
+        name: "Demo User",
+        email: formData.email,
+        role: "user",
+        lastLogin: new Date().toISOString()
+      };
+      
+      // Store user profile in localStorage
+      localStorage.setItem('userProfile', JSON.stringify(userProfile));
+      
       toast({
         title: "Login successful!",
         description: "Welcome back to Pathfinder.",
       });
+      
+      // Redirect to dashboard after successful login
       navigate('/dashboard');
     }, 1500);
   };

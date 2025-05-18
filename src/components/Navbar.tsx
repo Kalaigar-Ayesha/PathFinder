@@ -2,28 +2,45 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from './ui/button';
-import { Menu, X, User } from 'lucide-react';
+import { Menu, X, User, LogOut } from 'lucide-react';
 
-const Navbar = () => {
+interface NavbarProps {
+  isAuthenticated: boolean;
+  setIsAuthenticated: (isAuthenticated: boolean) => void;
+}
+
+const Navbar: React.FC<NavbarProps> = ({ isAuthenticated, setIsAuthenticated }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const location = useLocation();
   const navigate = useNavigate();
   
   useEffect(() => {
-    // Check if user is logged in - in a real app this would check for auth token
-    // For demo purposes, we'll consider the user logged in if they have completed profile setup
-    const userProfile = localStorage.getItem('userProfile');
-    setIsLoggedIn(!!userProfile || location.pathname === '/dashboard');
-  }, [location.pathname]);
+    // Get user profile from localStorage
+    const storedProfile = localStorage.getItem('userProfile');
+    if (storedProfile) {
+      setUserProfile(JSON.parse(storedProfile));
+    }
+  }, [isAuthenticated]);
   
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   
   const isActive = (path: string) => location.pathname === path;
   
+  const handleLogout = () => {
+    // Clear user data from localStorage
+    localStorage.removeItem('userProfile');
+    // Update authentication state
+    setIsAuthenticated(false);
+    // Close menu if open
+    setIsMenuOpen(false);
+    // Navigate to home
+    navigate('/');
+  };
+  
   const handleRoadmapClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (isLoggedIn) {
+    if (isAuthenticated) {
       navigate('/roadmap');
     } else {
       navigate('/login', { state: { from: '/roadmap' } });
@@ -61,7 +78,7 @@ const Navbar = () => {
               </a>
               
               <div className="ml-4 flex items-center space-x-2">
-                {isLoggedIn ? (
+                {isAuthenticated ? (
                   <div className="flex items-center space-x-2">
                     <Link to="/dashboard" className={`px-3 py-2 rounded-md text-sm font-medium ${isActive('/dashboard') ? 'text-pathfinder-primary' : 'text-gray-600 hover:text-pathfinder-primary'}`}>
                       Dashboard
@@ -80,15 +97,13 @@ const Navbar = () => {
                             Dashboard
                           </Link>
                           <button 
-                            onClick={() => {
-                              // In a real app, this would log out the user
-                              localStorage.removeItem('userProfile');
-                              setIsLoggedIn(false);
-                              navigate('/');
-                            }} 
+                            onClick={handleLogout} 
                             className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                           >
-                            Sign Out
+                            <div className="flex items-center">
+                              <LogOut size={14} className="mr-2" />
+                              <span>Sign Out</span>
+                            </div>
                           </button>
                         </div>
                       </div>
@@ -156,7 +171,7 @@ const Navbar = () => {
               Personalized Roadmap
             </a>
             <div className="mt-4 flex flex-col space-y-2 px-3">
-              {isLoggedIn ? (
+              {isAuthenticated ? (
                 <>
                   <Link to="/dashboard" onClick={toggleMenu} className="w-full">
                     <Button variant="outline" className="w-full">Dashboard</Button>
@@ -166,15 +181,11 @@ const Navbar = () => {
                   </Link>
                   <Button 
                     variant="ghost" 
-                    className="w-full" 
-                    onClick={() => {
-                      localStorage.removeItem('userProfile');
-                      setIsLoggedIn(false);
-                      toggleMenu();
-                      navigate('/');
-                    }}
+                    className="w-full flex items-center justify-center" 
+                    onClick={handleLogout}
                   >
-                    Sign Out
+                    <LogOut size={16} className="mr-2" />
+                    <span>Sign Out</span>
                   </Button>
                 </>
               ) : (
