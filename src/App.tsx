@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from 'react';
 
 import Navbar from "./components/Navbar";
@@ -22,6 +22,18 @@ import ProfilePage from "./pages/ProfilePage";
 
 const queryClient = new QueryClient();
 
+// Auth protected route component
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const isAuthenticated = !!localStorage.getItem('userProfile');
+  const location = useLocation();
+  
+  if (!isAuthenticated) {
+    // Save the location the user was trying to access
+    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+  }
+  return <>{children}</>;
+};
+
 const App = () => {
   // Track authentication state globally
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -37,21 +49,17 @@ const App = () => {
     // Check on component mount
     checkAuth();
 
-    // Add listener for localStorage changes
+    // Add listener for localStorage changes and custom events
     window.addEventListener('storage', checkAuth);
+    window.addEventListener('login', checkAuth);
+    window.addEventListener('logout', checkAuth);
     
     return () => {
       window.removeEventListener('storage', checkAuth);
+      window.removeEventListener('login', checkAuth);
+      window.removeEventListener('logout', checkAuth);
     };
   }, []);
-
-  // Auth protected route component
-  const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-    if (!isAuthenticated) {
-      return <Navigate to="/login" replace />;
-    }
-    return <>{children}</>;
-  };
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -94,7 +102,9 @@ const App = () => {
               <Route 
                 path="/roadmap" 
                 element={
-                  isAuthenticated ? <RoadmapGenerator /> : <Navigate to="/login" state={{ from: '/roadmap' }} />
+                  <ProtectedRoute>
+                    <RoadmapGenerator />
+                  </ProtectedRoute>
                 } 
               />
               <Route path="*" element={<NotFound />} />

@@ -1,6 +1,6 @@
 
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     email: '',
@@ -19,11 +20,13 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   // Check if already logged in, redirect to dashboard if so
-  useState(() => {
+  useEffect(() => {
     if (localStorage.getItem('userProfile')) {
-      navigate('/dashboard');
+      // If there's a specific path to redirect to after login, use that
+      const from = location.state?.from || '/dashboard';
+      navigate(from, { replace: true });
     }
-  });
+  }, [navigate, location.state]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -79,8 +82,12 @@ const Login = () => {
         description: "Welcome back to Pathfinder.",
       });
       
-      // Redirect to dashboard after successful login
-      navigate('/dashboard');
+      // Redirect to intended destination or dashboard after successful login
+      const from = location.state?.from || '/dashboard';
+      navigate(from, { replace: true });
+      
+      // Dispatch a storage event so other components can react to the login
+      window.dispatchEvent(new Event('storage'));
     }, 1500);
   };
 

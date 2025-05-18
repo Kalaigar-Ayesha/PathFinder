@@ -23,6 +23,11 @@ const Navbar: React.FC<NavbarProps> = ({ isAuthenticated, setIsAuthenticated }) 
     }
   }, [isAuthenticated]);
   
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [location.pathname]);
+  
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   
   const isActive = (path: string) => location.pathname === path;
@@ -32,8 +37,9 @@ const Navbar: React.FC<NavbarProps> = ({ isAuthenticated, setIsAuthenticated }) 
     localStorage.removeItem('userProfile');
     // Update authentication state
     setIsAuthenticated(false);
-    // Close menu if open
-    setIsMenuOpen(false);
+    setUserProfile(null);
+    // Dispatch a logout event
+    window.dispatchEvent(new Event('logout'));
     // Navigate to home
     navigate('/');
   };
@@ -86,7 +92,7 @@ const Navbar: React.FC<NavbarProps> = ({ isAuthenticated, setIsAuthenticated }) 
                     <div className="relative group">
                       <Button variant="outline" size="sm" className="flex items-center gap-1">
                         <User size={16} />
-                        <span>Profile</span>
+                        <span>{userProfile?.name || 'Profile'}</span>
                       </Button>
                       <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50 hidden group-hover:block">
                         <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
@@ -141,21 +147,18 @@ const Navbar: React.FC<NavbarProps> = ({ isAuthenticated, setIsAuthenticated }) 
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
             <Link 
               to="/" 
-              onClick={toggleMenu}
               className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/') ? 'text-pathfinder-primary' : 'text-gray-600 hover:text-pathfinder-primary'}`}
             >
               Home
             </Link>
             <Link 
               to="/use-case" 
-              onClick={toggleMenu}
               className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/use-case') ? 'text-pathfinder-primary' : 'text-gray-600 hover:text-pathfinder-primary'}`}
             >
               Use Case
             </Link>
             <Link 
               to="/subscription" 
-              onClick={toggleMenu}
               className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/subscription') ? 'text-pathfinder-primary' : 'text-gray-600 hover:text-pathfinder-primary'}`}
             >
               Plans
@@ -164,7 +167,6 @@ const Navbar: React.FC<NavbarProps> = ({ isAuthenticated, setIsAuthenticated }) 
               href="#" 
               onClick={(e) => {
                 handleRoadmapClick(e);
-                toggleMenu();
               }}
               className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/roadmap') ? 'text-pathfinder-primary' : 'text-gray-600 hover:text-pathfinder-primary'}`}
             >
@@ -173,10 +175,10 @@ const Navbar: React.FC<NavbarProps> = ({ isAuthenticated, setIsAuthenticated }) 
             <div className="mt-4 flex flex-col space-y-2 px-3">
               {isAuthenticated ? (
                 <>
-                  <Link to="/dashboard" onClick={toggleMenu} className="w-full">
+                  <Link to="/dashboard" className="w-full">
                     <Button variant="outline" className="w-full">Dashboard</Button>
                   </Link>
-                  <Link to="/profile" onClick={toggleMenu} className="w-full">
+                  <Link to="/profile" className="w-full">
                     <Button variant="default" className="w-full">Profile</Button>
                   </Link>
                   <Button 
@@ -190,10 +192,10 @@ const Navbar: React.FC<NavbarProps> = ({ isAuthenticated, setIsAuthenticated }) 
                 </>
               ) : (
                 <>
-                  <Link to="/login" onClick={toggleMenu}>
+                  <Link to="/login" className="w-full">
                     <Button variant="outline" className="w-full">Login</Button>
                   </Link>
-                  <Link to="/signup" onClick={toggleMenu}>
+                  <Link to="/signup" className="w-full">
                     <Button variant="default" className="w-full">Sign Up</Button>
                   </Link>
                 </>
